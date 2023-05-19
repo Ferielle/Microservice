@@ -1,0 +1,43 @@
+version: "3.8"
+services:
+  mysql_db1:
+    image: mysql:latest
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=
+      - MYSQL_ALLOW_EMPTY_PASSWORD=1
+      - MYSQL_DATABASE=microservice
+    ports:
+      - 3336:3306
+    volumes:
+      - './.mysql-data/db:/var/lib/mysql'
+
+  eureka:
+    image: hamzaargoubi1995/eurekaserver
+    # restart: on-failure
+    ports:
+      - 8081:8081
+    environment:
+      SPRING_APPLICATION_JSON: '{
+        "spring.application.name":"eureka-service",
+        "eureka.client.register-with-eureka":false,
+        "eureka.client.fetch-registry":false}'
+  client:
+    depends_on:
+      - mysql_db1
+      - eureka
+    image: feriel2022/personservice
+    # restart: on-failure
+    ports:
+      - 8083:8083
+    environment:
+      SPRING_APPLICATION_JSON: '{
+        "spring.application.name":"Application_Microservice",
+        "server.servlet.context-path":"/mic",
+        "spring.datasource.url"  : "jdbc:mysql://mysql_db1:3306/microservice?useSSL=false",
+        "spring.datasource.username" : "root",
+        "spring.datasource.password" : "",
+        "spring.jpa.properties.hibernate.dialect" : "org.hibernate.dialect.MySQL5InnoDBDialect",
+        "spring.jpa.hibernate.ddl-auto" : "update",
+        "eureka.client.service-url.defaultZone":"http://eureka:8081/eureka/",
+        "eureka.client.register-with-eureka":true}'
